@@ -39,6 +39,16 @@ ROTATE_DICT = {
     (-1, -1): (True, -45)    # 左上
 }
 
+def update_bb():
+    bb_imgs = []
+    bb_accs = [a for a in range(1, 11)]
+    for r in range(1, 11):
+        bb_img = pg.Surface((20*r, 20*r))
+        bb_img.set_colorkey((0, 0, 0))
+        pg.draw.circle(bb_img, (255, 0, 0), (10*r, 10*r), 10*r)
+        bb_imgs.append(bb_img)
+    return bb_imgs, bb_accs
+
 def update_kk_image(original_img, last_direction):
     flip, angle = ROTATE_DICT.get(last_direction, (False, 0))
     new_img = pg.transform.flip(original_img, flip, False)
@@ -55,10 +65,8 @@ def main():
     kk_img = original_img
     kk_rct = kk_img.get_rect()
     kk_rct.center = 900, 400
-    # ここから爆弾の設定
-    bd_img = pg.Surface((20, 20))
-    bd_img.set_colorkey((0, 0, 0))
-    pg.draw.circle(bd_img, (255, 0, 0), (10, 10), 10)
+    bb_imgs, bb_accs = update_bb()
+    bd_img = bb_imgs[0]
     bd_rct = bd_img.get_rect()
     bd_rct.center = random.randint(0, WIDTH), random.randint(0, HEIGHT)
     vx, vy = +5, +5  # 横方向速度，縦方向速度
@@ -92,13 +100,24 @@ def main():
             kk_rct.move_ip(-sum_mv[0], -sum_mv[1])
         screen.blit(kk_img, kk_rct)
         # 爆弾の移動と表示
-        bd_rct.move_ip(vx, vy)       
-        screen.blit(bd_img, bd_rct)
+        bd_img = bb_imgs[min(tmr // 150, 9)]
+        bd_rct.size = bd_img.get_size()
+        # 爆弾の速度更新
+        # 爆弾を移動させる
+        bd_rct.move_ip(vx, vy)
+        
+        # 爆弾が画面端に達した場合の反転処理
         yoko, tate = check_bound(bd_rct)
         if not yoko:  # 横方向にはみ出てたら
             vx *= -1
         if not tate:  # 縦方向にはみ出てたら
             vy *= -1
+
+        # 爆弾の速度を更新する
+        vx = bb_accs[min(tmr // 150, 9)] * (5 if vx > 0 else -5)
+        vy = bb_accs[min(tmr // 150, 9)] * (5 if vy > 0 else -5)
+
+        screen.blit(bd_img, bd_rct)
         pg.display.update()
         tmr += 1
         clock.tick(50)
