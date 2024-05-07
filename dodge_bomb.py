@@ -1,3 +1,4 @@
+import math
 import os
 import random
 import sys
@@ -76,6 +77,20 @@ def update_kk_image(original_img, last_direction):
     new_img = pg.transform.rotate(new_img, angle)
     return new_img
 
+def calc_bb_speed(current_pos, target_pos, prev_vx, prev_vy, inertia_distance=300, speed=5):
+    # 差分ベクトル
+    dx, dy = target_pos[0] - current_pos[0], target_pos[1] - current_pos[1]
+    distance = math.sqrt(dx**2 + dy**2)
+    
+    if distance < inertia_distance:
+        return prev_vx, prev_vy
+    
+    norm = math.sqrt(dx**2 + dy**2)
+    normalized_vx = (dx / norm) * speed
+    normalized_vy = (dy / norm) * speed
+    
+    return normalized_vx, normalized_vy
+
 def main():
     pg.display.set_caption("逃げろ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -124,21 +139,11 @@ def main():
         # 爆弾の移動と表示
         bd_img = bb_imgs[min(tmr // 150, 9)]
         bd_rct.size = bd_img.get_size()
-        # 爆弾の速度更新
-        # 爆弾を移動させる
+
+        # 爆弾の速度
+        vx, vy = calc_bb_speed((bd_rct.centerx, bd_rct.centery), (kk_rct.centerx, kk_rct.centery), vx, vy)
         bd_rct.move_ip(vx, vy)
         
-        # 爆弾が画面端に達した場合の反転処理
-        yoko, tate = check_bound(bd_rct)
-        if not yoko:  # 横方向にはみ出てたら
-            vx *= -1
-        if not tate:  # 縦方向にはみ出てたら
-            vy *= -1
-
-        # 爆弾の速度を更新する
-        vx = bb_accs[min(tmr // 150, 9)] * (5 if vx > 0 else -5)
-        vy = bb_accs[min(tmr // 150, 9)] * (5 if vy > 0 else -5)
-
         screen.blit(bd_img, bd_rct)
         pg.display.update()
         tmr += 1
