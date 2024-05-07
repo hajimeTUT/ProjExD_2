@@ -13,6 +13,27 @@ DELTA = {  # 移動量辞書（押下キー：移動量タプル）
 }
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
+def show_game_over(screen):
+    # 黒の半透明の四角を画面全体に描画
+    overlay = pg.Surface((WIDTH, HEIGHT))
+    overlay.fill((0, 0, 0))
+    overlay.set_alpha(128)  # 半透明度設定
+    screen.blit(overlay, (0, 0))
+
+    # Game Over のテキスト
+    font = pg.font.Font(None, 100)
+    text = font.render('Game Over', True, (255, 255, 255))
+    text_rect = text.get_rect(center=(WIDTH / 2, HEIGHT / 2))
+    screen.blit(text, text_rect)
+
+    
+    crying_img = pg.image.load("fig/8.png")
+    crying_rect1 = crying_img.get_rect(center=(WIDTH / 2 - 270, HEIGHT / 2))
+    crying_rect2 = crying_img.get_rect(center=(WIDTH / 2 + 270, HEIGHT / 2))
+    screen.blit(crying_img, crying_rect1)
+    screen.blit(crying_img, crying_rect2)
+    pg.display.update()
+    pg.time.delay(5000)  # 5秒間表示
 
 def check_bound(obj_rct:pg.Rect) -> tuple[bool, bool]:
     """
@@ -79,6 +100,7 @@ def main():
                 return 
         if kk_rct.colliderect(bd_rct):  # こうかとんと爆弾がぶつかったら
             print("Game Over")
+            show_game_over(screen)
             return
         screen.blit(bg_img, [0, 0]) 
 
