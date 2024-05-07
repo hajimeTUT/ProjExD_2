@@ -27,13 +27,32 @@ def check_bound(obj_rct:pg.Rect) -> tuple[bool, bool]:
         tate = False
     return yoko, tate
 
+# 移動方向に基づいて画像を反転させ、適切な角度で回転させる設定
+ROTATE_DICT = {
+    (1, 0): (False, 0),     # 右
+    (1, 1): (False, -45),   # 右下
+    (1, -1): (False, 45),   # 右上
+    (0, 1): (False, -90),   # 下
+    (0, -1): (False, 90),   # 上
+    (-1, 0): (True, 0),     # 左
+    (-1, 1): (True, 45),   # 左下
+    (-1, -1): (True, -45)    # 左上
+}
+
+def update_kk_image(original_img, last_direction):
+    flip, angle = ROTATE_DICT.get(last_direction, (False, 0))
+    new_img = pg.transform.flip(original_img, flip, False)
+    new_img = pg.transform.rotate(new_img, angle)
+    return new_img
 
 def main():
     pg.display.set_caption("逃げろ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     # ここからこうかとんの設定
-    bg_img = pg.image.load("fig/pg_bg.jpg")    
-    kk_img = pg.transform.rotozoom(pg.image.load("fig/3.png"), 0, 2.0)
+    bg_img = pg.image.load("fig/pg_bg.jpg")
+    original_img = pg.transform.rotozoom(pg.image.load("fig/3.png"), 0, 2.0)
+    original_img = pg.transform.flip(original_img, True, False)  # 初期反転
+    kk_img = original_img
     kk_rct = kk_img.get_rect()
     kk_rct.center = 900, 400
     # ここから爆弾の設定
@@ -43,7 +62,7 @@ def main():
     bd_rct = bd_img.get_rect()
     bd_rct.center = random.randint(0, WIDTH), random.randint(0, HEIGHT)
     vx, vy = +5, +5  # 横方向速度，縦方向速度
-
+    last_direction = (0, 0)
     clock = pg.time.Clock()
     tmr = 0
     while True:
@@ -60,8 +79,14 @@ def main():
         sum_mv = [0, 0]
         for k, v in DELTA.items():
             if key_lst[k]:
-               sum_mv[0] += v[0]
-               sum_mv[1] += v[1]
+                sum_mv[0] += v[0]
+                sum_mv[1] += v[1]
+
+        if sum_mv[0] != 0 or sum_mv[1] != 0:
+            last_direction = (sum_mv[0] // abs(sum_mv[0]) if sum_mv[0] != 0 else 0,
+                              sum_mv[1] // abs(sum_mv[1]) if sum_mv[1] != 0 else 0)
+            kk_img = update_kk_image(original_img, last_direction)
+
         kk_rct.move_ip(sum_mv)
         if check_bound(kk_rct) != (True, True):
             kk_rct.move_ip(-sum_mv[0], -sum_mv[1])
